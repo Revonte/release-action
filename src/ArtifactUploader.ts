@@ -1,9 +1,13 @@
 import * as core from '@actions/core';
-import {Artifact} from "./Artifact";
-import {Releases} from "./Releases";
+import { Artifact } from "./Artifact";
+import { Releases } from "./Releases";
 
 export interface ArtifactUploader {
     uploadArtifacts(artifacts: Artifact[], releaseId: number, uploadUrl: string): Promise<void>
+}
+
+function sleep(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 export class GithubArtifactUploader implements ArtifactUploader {
@@ -16,8 +20,8 @@ export class GithubArtifactUploader implements ArtifactUploader {
     }
 
     async uploadArtifacts(artifacts: Artifact[],
-                          releaseId: number,
-                          uploadUrl: string): Promise<void> {
+        releaseId: number,
+        uploadUrl: string): Promise<void> {
         if (this.replacesExistingArtifacts) {
             await this.deleteUpdatedArtifacts(artifacts, releaseId)
         }
@@ -30,9 +34,10 @@ export class GithubArtifactUploader implements ArtifactUploader {
     }
 
     private async uploadArtifact(artifact: Artifact,
-                                 releaseId: number,
-                                 uploadUrl: string,
-                                 retry = 3) {
+        releaseId: number,
+        uploadUrl: string,
+        retry = 4,
+        retryDelay = 4) {
         try {
             core.debug(`Uploading artifact ${artifact.name}...`)
             await this.releases.uploadArtifact(uploadUrl,
@@ -43,8 +48,9 @@ export class GithubArtifactUploader implements ArtifactUploader {
                 releaseId)
         } catch (error) {
             if (error.status >= 500 && retry > 0) {
-                core.warning(`Failed to upload artifact ${artifact.name}. ${error.message}. Retrying...`)
-                await this.uploadArtifact(artifact, releaseId, uploadUrl, retry - 1)
+                core.warning(`Failed to upload artifact ${artifact.name}. ${error.message}. Retrying after ${retryDelay} seconds...`)
+                await sleep(retryDelay * 1000)
+                await this.uploadArtifact(artifact, releaseId, uploadUrl, retry - 1, retryDelay * 2)
             } else {
                 if (this.throwsUploadErrors) {
                     throw Error(`Failed to upload artifact ${artifact.name}. ${error.message}.`)
