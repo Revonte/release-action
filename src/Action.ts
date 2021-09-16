@@ -52,7 +52,7 @@ export class Action {
         }
     }
 
-    private async checkForMissingReleaseError(error: Error): Promise<CreateOrUpdateReleaseResponse> {
+    private async checkForMissingReleaseError(error: any): Promise<CreateOrUpdateReleaseResponse> {
         if (Action.noPublishedRelease(error)) {
             return await this.updateDraftOrCreateRelease()
         } else {
