@@ -90,7 +90,7 @@ export class Action {
     private async findMatchingDraftReleaseId(): Promise<number | undefined> {
         const tag = this.inputs.tag
         const response = await this.releases.listReleases()
-        const releases = response.data
+        const releases: any[] = response.data
         const draftRelease = releases.find(release => release.draft && release.tag_name == tag)
 
         return draftRelease?.id
