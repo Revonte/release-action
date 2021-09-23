@@ -50,6 +50,7 @@ export class GithubArtifactUploader implements ArtifactUploader {
             if (error.status >= 500 && retry > 0) {
                 core.warning(`Failed to upload artifact ${artifact.name}. ${error.message}. Retrying after ${retryDelay} seconds...`)
                 await sleep(retryDelay * 1000)
+                await this.deleteUpdatedArtifacts([artifact], releaseId)
                 await this.uploadArtifact(artifact, releaseId, uploadUrl, retry - 1, retryDelay * 2)
             } else {
                 if (this.throwsUploadErrors) {
